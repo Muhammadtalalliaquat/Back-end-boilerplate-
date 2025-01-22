@@ -204,7 +204,7 @@ router.post(`/resetPassword`, async (req, res) => {
       { $set: { password: encryptedPassword } }
     );
     
-    sendResponse(res, 200, false, "Password has been reset successfully");
+    sendResponse(res, 200, { user, token } , false, "Password has been reset successfully");
   } catch (error) {
     console.log("reset password error", error.message);
     if (
