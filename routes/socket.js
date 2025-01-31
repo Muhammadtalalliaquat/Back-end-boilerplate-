@@ -4,6 +4,8 @@ import User from "../models/user.js";
 const setupSocket = (appServer) => {
   const userSockets = {};
 
+  const onlineUsers = {};
+
   const io = new Server(appServer, {
     cors: {
       origin: "*",
@@ -54,6 +56,16 @@ const setupSocket = (appServer) => {
         console.error("Error fetching users:", error);
       }
     });
+
+    socket.on("user_online" , ({ userId  }) => {
+      onlineUsers[userId] = true;
+      io.emit("user_status" , { userId, status: "online" })
+    })
+
+    socket.on("user_offline" , ({ userId  }) => {
+       delete onlineUsers[userId]
+      io.emit("user_status" , { userId, status: "offline" })
+    })
 
     socket.on("new_chat", (data) => {
       console.log("New message", data);
