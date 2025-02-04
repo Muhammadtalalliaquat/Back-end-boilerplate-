@@ -4,10 +4,9 @@ const { Schema } = mongoose;
 
 const messageSchema = new mongoose.Schema({
     message: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
     senderId: { type: Schema.Types.ObjectId, ref: "User" },
     receiverId: { type: Schema.Types.ObjectId, ref: "User" },
-});
+} , { timestamps: true });
 
-const Message = mongoose.model(`User` , messageSchema);
+const Message = mongoose.model(`Message` , messageSchema);
 export default Message;
