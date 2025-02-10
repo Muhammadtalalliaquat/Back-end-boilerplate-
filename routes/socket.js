@@ -5,6 +5,7 @@ import Message from "../models/message.js";
 const setupSocket = (appServer) => {
   const userSockets = {};
   const onlineUsers = {};
+  let messages = [];
 
   const io = new Server(appServer, {
     cors: {
@@ -58,13 +59,17 @@ const setupSocket = (appServer) => {
     });
 
     socket.on("user_online", ({ userId }) => {
-      onlineUsers[userId] = true;
+      userSockets[userId] = socket.id;
       io.emit("user_status", { userId, status: "online" });
     });
 
     socket.on("user_offline", ({ userId }) => {
-      delete onlineUsers[userId];
-      io.emit("user_status", { userId, status: "offline" });
+      delete userSockets[userId];
+      io.emit("user_status", {
+        userId,
+        status: "offline",
+        onlineUsers: Object.keys(userSockets),
+      });
     });
 
     socket.on("new_chat", (data) => {
@@ -98,7 +103,7 @@ const setupSocket = (appServer) => {
         console.log("New message received:", { message, senderId, receiverId });
 
         if (!message || !senderId || !receiverId) {
-          console.error("Invalid message data:", {
+          console.log("Invalid message data:", {
             message,
             senderId,
             receiverId,
@@ -113,8 +118,11 @@ const setupSocket = (appServer) => {
           message,
           senderId,
           receiverId,
+          // status: targetSocket ? "delivered" : "sent",
         });
         await newMessage.save();
+
+        // messages.push(newMessage);
 
         if (targetSocket) {
           // Send message to the receiver if they are online
@@ -122,8 +130,9 @@ const setupSocket = (appServer) => {
             message,
             senderId,
             receiverId,
+            // status: targetSocket ? "delivered" : "sent",
           });
-          console.log("Message sent to:", receiverId);
+          console.log("Message sent to:", receiverId, newMessage);
         } else {
           console.log("Receiver is offline. Message saved but not delivered.");
         }
@@ -131,6 +140,56 @@ const setupSocket = (appServer) => {
         console.error("Error handling new_message:", error);
       }
     });
+
+    socket.on("delete_message", async ({ messageId, senderId }) => {
+      try {
+        console.log(`Delelcting message ${messageId} from ${senderId}`);
+        const message = await Message.findById(messageId);
+
+        if (!message) {
+          console.log("message not found");
+          return;
+        }
+
+        if (message.senderId.toString() !== senderId) {
+          console.log("Unauthorized: You can only delete your own messages.");
+          return;
+        }
+
+        await Message.findByIdAndDelete(messageId);
+
+        // messages = messages.filter((msg) => msg._id.toString() !== messageId);
+
+        console.log("Message deleted successfully.");
+
+        io.to(userSockets[message.receiverId]).emit("message_deleted", {
+          messageId,
+        });
+        io.to(userSockets[senderId]).emit("message_deleted", { messageId });
+      } catch (error) {
+        console.error("Error deleting message:", error);
+      }
+    });
+
+    // socket.on("message_seen", async ({ senderId, receiverId }) => {
+    //   try {
+    //     // Update message status in database
+    //     await Message.updateMany(
+    //       { senderId, receiverId, status: { $ne: "seen" } },
+    //       { $set: { status: "seen" } }
+    //     );
+
+    //     console.log(`Messages from ${senderId} to ${receiverId} marked as seen.`);
+
+    //     const senderSocketId = userSockets[senderId];
+    //     if (senderSocketId) {
+    //       io.to(senderSocketId).emit("message_seen_update", { senderId, receiverId });
+    //       console.log(`Sent seen update to sender: ${senderId}`);
+    //     }
+    //   } catch (error) {
+    //     console.error("Error updating message seen status:", error);
+    //   }
+    // });
 
     socket.on("disconnect", () => {
       console.log(`User disconnected:`, socket.id);
@@ -143,15 +202,11 @@ const setupSocket = (appServer) => {
         console.log(`User ${disconnectedUserId} disconnected`);
 
         io.emit("all_users", Object.keys(userSockets));
-
-        // User.find({}, "_id userName").then((allUsers) => {
-        //   let formattedUsers = allUsers.map((u) => ({
-        //     ...u._doc,
-        //     online: !!userSockets[u._id],
-        //   }));
-
-        //   io.emit("all_users", formattedUsers);
-        // });
+        io.emit("user_status", {
+          userId: disconnectedUserId,
+          status: "offline",
+          onlineUsers: Object.keys(userSockets),
+        });
       }
     });
   });
