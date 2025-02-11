@@ -11,11 +11,10 @@ const router = express.Router();
 
 const registerSchema = Joi.object({
   userName: Joi.string().min(3).max(20).required(),
-  // userName: Joi.string().optional(),
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
-  city: Joi.string().optional().allow(""),
-  country: Joi.string().optional().allow(""),
+  // city: Joi.string().optional().allow(""),
+  // country: Joi.string().optional().allow(""),
 });
 
 const loginSchema = Joi.object({
@@ -86,7 +85,7 @@ router.post(`/register`, async (req, res) => {
     sendResponse(
       res,
       201,
-      { verificationToken, user: { id: newUser._id, email: newUser.email } },
+      { verificationToken, user: newUser },
       false,
       "User Registered Successfully"
     );
