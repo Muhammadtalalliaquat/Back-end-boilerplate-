@@ -4,7 +4,6 @@ import authRoutes from "./routes/auth.js";
 import taskRoutes from "./routes/task.js";
 import autheUser from "./middleware/authUser.js";
 import setupSocket from "./routes/socket.js";
-// import mongoose from "mongoose";
 import morgan from "morgan";
 import connectDB from "./database/data.js";
 import cors from "cors";
@@ -15,15 +14,12 @@ const app = express();
 const PORT = process.env.PORT;
 
 app.use(express.json());
-app.use(cors());
+app.use(cors("*"));
 app.use(morgan(`dev`));
 
 const appServer = http.createServer(app);
 setupSocket(appServer);
 
-// mongoose.connect(process.env.MONGODB_URI)
-// .then(()=> console.log(`DB connected`))
-// .catch((error)=> console.log(`DB not connected` , error))
 
 connectDB()
   .then(() => {
@@ -41,20 +37,3 @@ connectDB()
     console.error("DB not connected Server is not running:", err.message);
     process.exit(1); // Exit the process if DB connection fails
   });
-
-// const todoArry = [];
-
-// app.get("/" , (req , res) => {
-//     console.log(req.query);
-//     // res.send('Hello, World!');
-//     res.send(`Porduct id: ${req.params.id}`)
-// })
-
-// app.post(`/toods` , (req , res) => {
-//     console.log("Request Body:", req.body);
-//     const { name } = req.body;
-//     todoArry.push({ name, id: new Date() });
-//     res.json(`sending ${name}`);
-// })
-
-// app.listen(PORT , () => console.log(`Server is runnong on PORT ${PORT}`))
