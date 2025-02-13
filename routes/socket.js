@@ -30,19 +30,12 @@ const setupSocket = (appServer) => {
 
       console.log("Connected User IDs:", userSockets);
 
-      //   userIds[user.user.id] = socket.id
-      //   console.log("Connected User IDs:", userIds)
       try {
         let allUsers = await User.find({
           _id: { $ne: user._id },
         }).select("-password");
 
         console.log("All Users:", allUsers);
-
-        // let formattedUsers = allUsers.map((u) => ({
-        //   ...u._doc,
-        //   online: !!userSockets[u._id],
-        // }));
 
         socket.on("Fetch user", async ({ email, _id }) => {
           const user = await User.findOne({ email, _id });
@@ -51,7 +44,6 @@ const setupSocket = (appServer) => {
           socket.emit("fetch_user", { friendList: friends });
         });
 
-        // // Emit the list of users to all clients
         io.emit("all_users", allUsers);
       } catch (error) {
         console.error("Error fetching users:", error);

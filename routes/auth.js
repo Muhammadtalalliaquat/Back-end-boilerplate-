@@ -37,7 +37,7 @@ function sendEmail(recepientEmail, token) {
     to: recepientEmail,
     subject: "Verification Email",
     html: `<p>Please verify your email and click on the link below: 
-                    <a href="http://localhost:3000/emailVerify?token=${token}" target="_blank">
+                    <a href="${process.env.FRONTEND_URL}/emailVerify?token=${token}" target="_blank">
                        Click here to verify ${token}
                     </a>
         </p>`,
